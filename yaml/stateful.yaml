@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+spec:
+  serviceName: rabbitmq
+  replicas: 3
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      serviceAccountName: rabbitmq
+      terminationGracePeriodSeconds: 10
+      nodeSelector:
+        mq-node: "yes"
+      containers:        
+      - name: rabbitmq-autocluster
+        image: h3crd-wlan1.chinacloudapp.cn:5000/rabbitmq-zj:20180129e
+        ports:
+          - name: http
+            protocol: TCP
+            containerPort: 15672
+          - name: amqp
+            protocol: TCP
+            containerPort: 5672
+        livenessProbe:
+          exec:
+            command: ["rabbitmqctl", "status"]
+          initialDelaySeconds: 30
+          timeoutSeconds: 10
+        readinessProbe:
+          exec:
+            command: ["rabbitmqctl", "status"]
+          initialDelaySeconds: 30
+          timeoutSeconds: 15
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          capabilities: {}
+          privileged: true
+        volumeMounts:
+        - name: rabbitmq-data
+          mountPath: /var/lib/rabbitmq/mnesia
+        - name: rabbitmq-log
+          mountPath: /var/log/rabbitmq
+        env:
+        - name: MY_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: RABBITMQ_USE_LONGNAME
+          value: "true"
+        - name: RABBITMQ_NODENAME
+          value: "rabbit@$(MY_POD_IP)"
+        - name: AUTOCLUSTER_TYPE
+          value: "k8s"
+        - name: RABBITMQ_NODE_TYPE
+          value: "disc"
+        - name: AUTOCLUSTER_DELAY
+          value: "10"
+        - name: AUTOCLUSTER_CLEANUP
+          value: "false"
+        - name: CLEANUP_WARN_ONLY
+          value: "true"
+        - name: K8S_SCHEME
+          value: "http"
+        - name: K8S_HOST
+          value: "172.20.0.12"
+        - name: K8S_PORT
+          value: "8080"
+      hostNetwork: true
+  volumeClaimTemplates:
+  - metadata:
+      name: rabbitmq-data
+      annotations:
+        volume.beta.kubernetes.io/storage-class: "fast"
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 2Gi
+  - metadata:
+      name: rabbitmq-log
+      annotations:
+        volume.beta.kubernetes.io/storage-class: "fast"
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 2Gi
