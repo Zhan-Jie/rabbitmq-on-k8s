@@ -62,8 +62,8 @@ docker commit -m 'add dependencies' $myid centos-base:latest
 使用编写的Dockerfile（见附件1）制作镜像：
 
 ```shell
-docker build -t h3crd-wlan1.chinacloudapp.cn:5000/rabbitmq-zj:latest ./Dockerfile
-docker push h3crd-wlan1.chinacloudapp.cn:5000/rabbitmq-zj:latest
+docker build -t my-registry:5000/rabbitmq-zj:latest ./Dockerfile
+docker push my-registry:5000/rabbitmq-zj:latest
 ```
 
 目前应该有以下目录结构：
@@ -397,7 +397,7 @@ spec:
         mq-node: "yes"
       containers:        
       - name: rabbitmq-autocluster
-        image: h3crd-wlan1.chinacloudapp.cn:5000/rabbitmq-zj:20180129e
+        image: my-registry:5000/rabbitmq-zj:20180129e
         ports:
           - name: http
             protocol: TCP
