@@ -16,5 +16,5 @@ echo '====== move RabbitMQ configuration  file ========'
 mv rabbitmq.config /etc/rabbitmq/
 
 rabbitmq-server -detached
-rabbitmq-plugins enable rabbitmq_management autocluster
+rabbitmq-plugins enable --offline rabbitmq_management autocluster
 rabbitmq-plugins list
