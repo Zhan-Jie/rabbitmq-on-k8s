@@ -37,6 +37,16 @@ else
 fi
 }
 
+gen_cookie(){
+cookie='123456789ABCDEFGHIJKLMN'
+if [ $RABBITMQ_ERLANG_COOKIE ]; then
+	cookie=$RABBITMQ_ERLANG_COOKIE
+fi
+
+echo $cookie > /var/lib/rabbitmq/.erlang.cookie
+}
+
+gen_cookie && \
 check_apiserver && \
 rabbitmq-server -detached && \
 chown -R rabbitmq:rabbitmq /var/lib/rabbitmq /var/log/rabbitmq && \
