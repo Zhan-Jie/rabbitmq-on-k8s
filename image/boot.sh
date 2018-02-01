@@ -46,7 +46,10 @@ fi
 echo $cookie > /var/lib/rabbitmq/.erlang.cookie
 }
 
-gen_cookie && \
+echo ${MY_IP}' '${MY_POD_NAME}${K8S_HOSTNAME_SUFFIX} >> /etc/hosts
+
+gen_cookie 
+
 check_apiserver && \
 rabbitmq-server -detached && \
 chown -R rabbitmq:rabbitmq /var/lib/rabbitmq /var/log/rabbitmq && \

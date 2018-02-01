@@ -477,6 +477,8 @@ rabbitmq server的安装文档：http://www.rabbitmq.com/install-rpm.html
 
 官方使用autocluster插件在kubernetes集群实现集群的示例：https://github.com/rabbitmq/rabbitmq-autocluster/tree/master/examples/k8s_rbac_statefulsets
 
+大神项目示例：https://github.com/kuberstack/kubernetes-rabbitmq-autocluster
+
 RabbitMQ配置文件的说明：http://www.rabbitmq.com/configure.html
 
 RabbitMQ自动化组建集群：http://www.rabbitmq.com/cluster-formation.html#peer-discovery-k8s
