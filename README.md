@@ -172,7 +172,7 @@ kubectl label node k8s-node5 mq=yes
 比如，现在在k8s集群里有5个rabbitmq节点了，对应5个pod：`rabbitmq-0`，……，`rabbitmq-4`。现在想删除一个rabbitmq节点（也即删除pod `rabbimq-4`），可以在k8s的master节点执行以下命令：
 
 ```shell
-mq_node='rabbit@'$(kubectl get po rabbitmq-4 -o jsonpath='{.status.podIP}')
+mq_node=$(kubectl exec rabbitmq-4 -- sh -c 'echo $RABBITMQ_NODENAME')
 kubectl exec rabbitmq-4 rabbitmqctl stop_app
 kubectl exec rabbitmq-0 rabbitmqctl forget_cluster_node $mq_node
 kubectl scale statefulset rabbitmq --replicas=4
