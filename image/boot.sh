@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 wait_for_log(){
 
 log_name=$1
@@ -46,8 +48,7 @@ fi
 echo $cookie > /var/lib/rabbitmq/.erlang.cookie
 }
 
-echo ${MY_IP}' '${MY_POD_NAME}${K8S_HOSTNAME_SUFFIX} >> /etc/hosts
-
+ping -c 5 ${MY_POD_NAME}${K8S_HOSTNAME_SUFFIX}
 gen_cookie 
 
 check_apiserver && \
