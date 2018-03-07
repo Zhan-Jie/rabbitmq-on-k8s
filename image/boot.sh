@@ -26,7 +26,7 @@ retry=0
 apiserver="http://${K8S_HOST}:${K8S_PORT}/api/v1"
 while [ $ck -ne 0 -a $retry -lt 10 ]
 do
-	curl $apiserver
+	curl -s $apiserver
 	ck=$?
         let retry=retry+1
 	sleep 2
@@ -48,9 +48,12 @@ fi
 echo $cookie > /var/lib/rabbitmq/.erlang.cookie
 }
 
-ping -c 5 ${MY_POD_NAME}${K8S_HOSTNAME_SUFFIX}
+echo 'test kube-dns ...'
+curl -k -s --head https://kubernetes
+echo 'generate erlang cookie'
 gen_cookie 
 
+echo 'test connecting to k8s apiserver'
 check_apiserver && \
 rabbitmq-server -detached && \
 chown -R rabbitmq:rabbitmq /var/lib/rabbitmq /var/log/rabbitmq && \
