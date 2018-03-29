@@ -24,7 +24,7 @@ wait_for_log(){
 check_apiserver(){
     ck=1
     retry=0
-    apiserver="http://${K8S_HOST}:${K8S_PORT}/api/v1"
+    apiserver="http://${K8S_HOST}:${K8S_PORT}/api"
     while [ $ck -ne 0 -a $retry -lt 10 ]
     do
         curl -s $apiserver
