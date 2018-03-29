@@ -45,6 +45,8 @@ spec:
           mountPath: /var/lib/rabbitmq/mnesia
         - name: rabbitmq-log
           mountPath: /var/log/rabbitmq
+        - name: rabbitmq-configmap
+          mountPath: /tmp/rabbitmq_config
         env:
         - name: MY_POD_NAME
           valueFrom:
