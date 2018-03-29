@@ -16,6 +16,10 @@ spec:
       terminationGracePeriodSeconds: 10
       nodeSelector:
         mq-node: "yes"
+      volumes:
+      - name: rabbitmq-config
+        configMap:
+          name: rabbitmq-configmap
       containers:        
       - name: rabbitmq-autocluster
         image: my-registry:5000/rabbitmq-zj:20180201
@@ -47,10 +51,6 @@ spec:
           mountPath: /var/log/rabbitmq
         - name: rabbitmq-config
           mountPath: /tmp/rabbitmq_config
-        volumes:
-        - name: rabbitmq-config
-          configMap:
-            name: rabbitmq-configmap
         env:
         - name: MY_POD_NAME
           valueFrom:
