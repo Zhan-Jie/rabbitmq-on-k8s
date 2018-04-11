@@ -1,0 +1,19 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hello
+            image: h3crd-wlan1.chinacloudapp.cn:5000/rabbitmq-logrotate:v1
+            env:
+            - name: K8S_HOST
+              value: "172.20.0.150"
+            - name: K8S_PORT
+              value: "8080"
+          restartPolicy: OnFailure
