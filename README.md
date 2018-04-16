@@ -100,16 +100,7 @@ kubectl create -f rabbitmq-service.yaml
 
 一共配置了两组端口，`http`表示的是rabbitmq网页监控页面访问的端口，`amqp`表示的是通过rabbitmq客户端访问的端口。
 
-## 3. 在k8s集群创建serviceAccount资源  ##
-
-autocluster插件需要访问apiserver，以发现其它rabbitmq节点。所以需要为它创建一个`serviceAccount`（也是一种k8s资源），以确保它有足够的权限在pod里访问apiserver。
-
-使用附件4的`rabbitmq-account.yaml`文件，在k8s集群的master节点执行以下命令创建`serviceAccount`资源：
-
-```shell
-kubectl create -f rabbitmq-account.yaml
-```
-## 4. 在k8s集群创建StatefulSet资源 ##
+## 3. 在k8s集群创建StatefulSet资源 ##
 
 假设现在现在想把rabbitmq集群部署到k8s集群里指定的3个Node上。假设这3个node的名字分别为`k8s-node1`、`k8s-node2`和`k8s-node3`，那么先应该在master节点执行以下命令，为它们设置标签：
 
@@ -142,9 +133,9 @@ kubectl create -f rabbitmq-statefulset.yaml
 
   解决方法：挂掉的节点，会被集群其它节点检测到失去连接，所以集群会把它移除。而挂掉的节点重启后，认为自己还在集群，所以尝试加入集群，然后又被拒绝。环境变量`AUTOCLUSTER_CLEANUP`应该设置为`false`，禁止自动移除跟集群失去连接的节点。
 
-## 5. 增加与减少RabbitMQ节点
+## 4. 增加与减少RabbitMQ节点
 
-### 5.1 增加节点
+### 4.1 增加节点
 
 可以使用类似于以下命令，进行增加rabbitmq节点：
 
@@ -161,7 +152,7 @@ kubectl label node k8s-node5 mq=yes
 
 注意这里设置的标签与`rabbitmq-statefulset.yaml`文件里的`nodeSelector`指定的标签一致。然后，再运行k8s的`scale`命令进行添加rabbitmq节点。
 
-### 5.2 减少节点
+### 4.2 减少节点
 
 首先需要清楚的是，使用当前文档的方案在k8s集群里搭建的rabbitmq集群，每个mq节点对应的pod名称都是有编号的，pod名称类似于`rabbitmq-0`、`rabbitmq-1`……这样的。
 
@@ -180,9 +171,9 @@ kubectl scale statefulset rabbitmq --replicas=4
 
 **注意** 务必先在待删除的rabbitmq节点执行`stop_app`让它脱离rabbitmq集群，然后再执行命令将其从rabbitmq集群移除。
 
-## 6. 其它问题及解决办法
+## 5. 其它问题及解决办法
 
-### 6.1 出现Network partition问题
+### 5.1 出现Network partition问题
 
 **形成的原因**
 
@@ -232,246 +223,27 @@ cluster_partition_handling=ignore
 ## 附件： ##
 
 ### 1. Dockerfile ###
-```dockerfile
-FROM centos-base:latest
-COPY ./files/* /tmp/
-COPY ./*.sh /tmp/
-WORKDIR /tmp/
-RUN sh ./install_rabbitmq.sh
-RUN rm -v ./install_rabbitmq.sh
-CMD sh boot.sh
-```
+[Dockerfile](image/Dockerfile)
 
 ### 2. install_rabbitmq.sh ###
 
-```shell
-echo '============ install erlang ... ============'
-rpm -ivh erlang-20.1.7.1-1.el7.centos.x86_64.rpm
-
-echo '============ install rabbitmq server ... ============'
-rpm -ivh rabbitmq-server-3.6.13-1.el7.noarch.rpm
-
-echo '============ deleting rpm packages ... ============'
-rm -v *.rpm
-
-chown -R rabbitmq:rabbitmq /var/lib/rabbitmq /var/log/rabbitmq
-
-echo '====== move RabbitMQ extension files ========'
-mv *.ez /usr/lib/rabbitmq/lib/rabbitmq_server-3.6.13/plugins/
-
-echo '====== move RabbitMQ configuration  file ========'
-mv rabbitmq.config /etc/rabbitmq/
-
-rabbitmq-server -detached
-rabbitmq-plugins enable rabbitmq_management autocluster
-rabbitmq-plugins list
-```
+[install_rabbitmq.sh](image/install_rabbitmq.sh)
 
 关于`rabbitmq.config`文件，可以参考在github上的rabbitmq server项目的`docs/rabbitmq.config.example`文件。地址：https://github.com/rabbitmq/rabbitmq-server。
 
 ### 3. boot.sh ###
 
-```shell
-#!/bin/bash
-
-wait_for_log(){
-
-log_name=$1
-
-echo 'check log file '$log_name'...'
-while true
-do
-        if [ ! -f $log_name ]; then
-                sleep 5
-        else
-                break
-        fi
-done
-
-tail -f $log_name
-
-}
-
-check_apiserver(){
-ck=1
-retry=0
-apiserver="http://${K8S_HOST}:${K8S_PORT}/api/v1"
-while [ $ck -ne 0 -a $retry -lt 10 ]
-do
-	curl $apiserver
-	ck=$?
-        let retry=retry+1
-	sleep 2
-done
-if [ $retry -lt 10 ] ; then
-	return 0
-else
-	echo "unable to connect kubernetes apiserver:$apiserver. Refuse to start rabbitmq server."
-	return 1	
-fi
-}
-
-check_apiserver && \
-rabbitmq-server -detached && \
-chown -R rabbitmq:rabbitmq /var/lib/rabbitmq /var/log/rabbitmq && \
-wait_for_log /var/log/rabbitmq/${RABBITMQ_NODENAME}.log
-```
+[boot.sh](image/boot.sh)
 
 ### 4. rabbitmq-service.yaml ###
 
-```yaml
-kind: Service
-apiVersion: v1
-metadata:
-  name: rabbitmq
-  labels:
-    app: rabbitmq
-    type: LoadBalancer  
-spec:
-  type: ClusterIP
-  ports:
-   - name: http
-     protocol: TCP
-     port: 15672
-     targetPort: 15672
-   - name: amqp
-     protocol: TCP
-     port: 5672
-     targetPort: 5672
-  selector:
-    app: rabbitmq
-```
+[rabbitmq-service.yaml](yaml/svc.yaml)
 
-### 5. rabbitmq-account.yaml ###
+### 5. rabbitmq-statefulset.yaml ###
 
-```yaml
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: rabbitmq
----
-kind: Role
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: rabbitmq
-rules:
-- apiGroups: [""]
-  resources: ["endpoints"]
-  verbs: ["get"]
----
-kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: rabbitmq
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: rabbitmq
-subjects:
-- kind: ServiceAccount
-  name: rabbitmq
-```
+[rabbitmq-statefulset.yaml](yaml/stateful.yaml)
 
-### 6. rabbitmq-statefulset.yaml ###
-
-```yaml
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: rabbitmq
-spec:
-  serviceName: rabbitmq
-  replicas: 3
-  selector:
-    matchLabels:
-      app: rabbitmq
-  template:
-    metadata:
-      labels:
-        app: rabbitmq
-    spec:
-      serviceAccountName: rabbitmq
-      terminationGracePeriodSeconds: 10
-      nodeSelector:
-        mq-node: "yes"
-      containers:        
-      - name: rabbitmq-autocluster
-        image: my-registry:5000/rabbitmq-zj:20180129e
-        ports:
-          - name: http
-            protocol: TCP
-            containerPort: 15672
-          - name: amqp
-            protocol: TCP
-            containerPort: 5672
-        livenessProbe:
-          exec:
-            command: ["rabbitmqctl", "status"]
-          initialDelaySeconds: 30
-          timeoutSeconds: 10
-        readinessProbe:
-          exec:
-            command: ["rabbitmqctl", "status"]
-          initialDelaySeconds: 30
-          timeoutSeconds: 15
-        imagePullPolicy: IfNotPresent
-        securityContext:
-          capabilities: {}
-          privileged: true
-        volumeMounts:
-        - name: rabbitmq-data
-          mountPath: /var/lib/rabbitmq/mnesia
-        - name: rabbitmq-log
-          mountPath: /var/log/rabbitmq
-        env:
-        - name: MY_POD_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        - name: RABBITMQ_USE_LONGNAME
-          value: "true"
-        - name: RABBITMQ_NODENAME
-          value: "rabbit@$(MY_POD_IP)"
-        - name: AUTOCLUSTER_TYPE
-          value: "k8s"
-        - name: RABBITMQ_NODE_TYPE
-          value: "disc"
-        - name: AUTOCLUSTER_DELAY
-          value: "10"
-        - name: AUTOCLUSTER_CLEANUP
-          value: "false"
-        - name: CLEANUP_WARN_ONLY
-          value: "true"
-        - name: K8S_SCHEME
-          value: "http"
-        - name: K8S_HOST
-          value: "172.20.0.12"
-        - name: K8S_PORT
-          value: "8080"
-      hostNetwork: true
-  volumeClaimTemplates:
-  - metadata:
-      name: rabbitmq-data
-      annotations:
-        volume.beta.kubernetes.io/storage-class: "fast"
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 2Gi
-  - metadata:
-      name: rabbitmq-log
-      annotations:
-        volume.beta.kubernetes.io/storage-class: "fast"
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      resources:
-        requests:
-          storage: 2Gi
-```
-
-### 7. 参考文档 ###
+### 6. 参考文档 ###
 
 rabbitmq server的安装文档：http://www.rabbitmq.com/install-rpm.html
 
