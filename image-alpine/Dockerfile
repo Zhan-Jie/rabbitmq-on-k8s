@@ -8,8 +8,6 @@ RUN addgroup -S rabbitmq && adduser -S -h /var/lib/rabbitmq -G rabbitmq rabbitmq
 # grab su-exec for easy step-down from root
 RUN apk add --no-cache 'su-exec>=0.2'
 
-RUN apk add --no-cache curl
-
 RUN apk add --no-cache \
 # Bash for docker-entrypoint
 		bash \
@@ -28,7 +26,8 @@ RUN apk add --no-cache \
 		erlang-sasl \
 		erlang-ssl \
 		erlang-syntax-tools \
-		erlang-xmerl
+		erlang-xmerl \
+		curl
 
 ENV RABBITMQ_HOME /opt/rabbitmq
 ENV PATH $RABBITMQ_HOME/sbin:$PATH
@@ -68,10 +67,8 @@ RUN set -ex; \
 	grep -qE '^SYS_PREFIX=\$\{RABBITMQ_HOME\}$' "$RABBITMQ_HOME/sbin/rabbitmq-defaults"; \
 	sed -ri 's!^(SYS_PREFIX=).*$!\1!g' "$RABBITMQ_HOME/sbin/rabbitmq-defaults"; \
 	grep -qE '^SYS_PREFIX=$' "$RABBITMQ_HOME/sbin/rabbitmq-defaults"; \
-	\
-	apk del .build-deps
-
-RUN mkdir -p /var/lib/rabbitmq /etc/rabbitmq /var/log/rabbitmq \
+	apk del .build-deps; \
+    mkdir -p /var/lib/rabbitmq /etc/rabbitmq /var/log/rabbitmq \
 	&& chown -R rabbitmq:rabbitmq /var/lib/rabbitmq /etc/rabbitmq /var/log/rabbitmq \
 	&& chmod -R 777 /var/lib/rabbitmq /etc/rabbitmq /var/log/rabbitmq ; \
     mv -f /tmp/*.ez $RABBITMQ_HOME/plugins; \
