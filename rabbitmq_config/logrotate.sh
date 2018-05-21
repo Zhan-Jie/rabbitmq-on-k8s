@@ -10,9 +10,11 @@ sasl_log="$log_base/${RABBITMQ_NODENAME}-sasl.log"
 
 if [ ! -f $log ]; then
     echo "[ERROR] log file $log is not found."
+    exit 1
 fi
 if [ ! -f $sasl_log ]; then
     echo "[ERROR] log file $sasl_log is not found."
+    exit 1
 fi
 
 # 10KB
