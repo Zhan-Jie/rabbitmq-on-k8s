@@ -20,6 +20,9 @@ spec:
       - name: rabbitmq-config
         configMap:
           name: rabbitmq-configmap
+      - name: host-time
+        hostPath:
+          path: /etc/localtime
       containers:        
       - name: rabbitmq-autocluster
         image: my-registry:5000/rabbitmq-zj:20180201
@@ -33,13 +36,16 @@ spec:
         livenessProbe:
           exec:
             command: ["rabbitmqctl", "status"]
-          initialDelaySeconds: 30
-          timeoutSeconds: 10
+          initialDelaySeconds: 180
+          timeoutSeconds: 5
+          periodSeconds: 60
+          failureThreshold: 1
         readinessProbe:
           exec:
             command: ["rabbitmqctl", "status"]
-          initialDelaySeconds: 30
-          timeoutSeconds: 15
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+          periodSeconds: 60
         imagePullPolicy: IfNotPresent
         securityContext:
           capabilities: {}
@@ -51,6 +57,8 @@ spec:
           mountPath: /var/log/rabbitmq
         - name: rabbitmq-config
           mountPath: /tmp/rabbitmq_config
+        - name: host-time
+          mountPath: /etc/localtime
         env:
         - name: MY_POD_NAME
           valueFrom:
