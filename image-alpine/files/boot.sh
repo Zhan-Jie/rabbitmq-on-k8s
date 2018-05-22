@@ -2,25 +2,10 @@
 
 set -e
 
-echo '[0] unalias cp'
-unalias -a cp
-
-check_apiserver(){
-    ck=1
-    retry=0
-    apiserver="http://${K8S_HOST}:${K8S_PORT}/api"
-    while [ $ck -ne 0 -a $retry -lt 10 ]
-    do
-        curl -s $apiserver
-        ck=$?
-        let retry=retry+1
-        sleep 5
-    done
-    if [ $retry -lt 10 ] ; then
-        return 0
-    else
-        echo "unable to connect kubernetes apiserver:$apiserver. Refuse to start rabbitmq server."
-        return 1	
+debug_msg() {
+    if [ "$BOOT_DEBUG" = "true" ];
+    then
+        echo "[DEBUG] boot.sh: $1"
     fi
 }
 
@@ -34,13 +19,13 @@ gen_cookie(){
 }
 
 echo '[1] test kube-dns ...'
-curl -k -s --head https://kubernetes
+curl -k -s --head -m 5 https://kubernetes
 
 echo '[2] generate erlang cookie'
 gen_cookie 
 
 echo '[3] test connecting to k8s apiserver'
-check_apiserver
+curl -s -m 5 http://${K8S_HOST}:${K8S_PORT}/api
 
 echo '[4] copy configuration files to /etc/rabbitmq/'
 cp -f /tmp/rabbitmq_config/* /etc/rabbitmq/
