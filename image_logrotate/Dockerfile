@@ -1,6 +1,7 @@
 FROM alpine:latest
 
-COPY ./do_it.sh /opt/
-COPY ./kubectl /opt/
+RUN mkdir /scripts/
+COPY ./kubectl /bin/
+COPY ./do_it.sh /scripts/
 
-CMD sh /opt/do_it.sh
+CMD sh /scripts/do_it.sh
