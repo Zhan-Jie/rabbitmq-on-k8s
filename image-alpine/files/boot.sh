@@ -2,6 +2,22 @@
 
 set -e
 
+wait_for_log(){
+	log_name=$1
+
+	echo 'check log file '$log_name'...'
+	while true
+	do
+		if [ ! -f $log_name ]; then
+			sleep 5
+		else
+			break
+		fi
+	done
+
+	tail -F $log_name
+}
+
 gen_cookie(){
     cookie='123456789ABCDEFGHIJKLMN'
     if [ $RABBITMQ_ERLANG_COOKIE ]; then
@@ -14,9 +30,9 @@ gen_cookie(){
 start_time=`date +%s`
 
 elapsed(){
-    cur_time=`date +%s`
-    elapsed=`expr $cur_time - $start_time` || true
-    echo "elapsed $elapsed seconds."
+    cur_time=`date +%s` || true
+    period=`expr $cur_time - $start_time` || true
+    echo "elapsed $period seconds."
 }
 
 echo '[1] test kube-dns ...'
@@ -42,4 +58,4 @@ rabbitmq-server -detached
 elapsed
 
 echo '[7] show running logs...'
-tail -F /var/log/rabbitmq/${RABBITMQ_NODENAME}.log
+wait_for_log /var/log/rabbitmq/${RABBITMQ_NODENAME}.log
