@@ -15,7 +15,7 @@ start_time=`date +%s`
 
 elapsed(){
     cur_time=`date +%s`
-    elapsed=`expr $cur_time - $start_time`
+    elapsed=`expr $cur_time - $start_time` || true
     echo "elapsed $elapsed seconds."
 }
 
