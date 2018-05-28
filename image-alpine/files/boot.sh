@@ -25,6 +25,8 @@ gen_cookie(){
     fi
 
     echo $cookie > /var/lib/rabbitmq/.erlang.cookie
+    chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie
+    chmod 400 /var/lib/rabbitmq/.erlang.cookie
 }
 
 start_time=`date +%s`
@@ -48,9 +50,10 @@ elapsed
 
 echo '[4] copy configuration files to /etc/rabbitmq/'
 cp -f /tmp/rabbitmq_config/* /etc/rabbitmq/
+elapsed
 
 echo '[5] change directory owner'
-chown -R rabbitmq:rabbitmq /var/lib/rabbitmq /var/log/rabbitmq
+chown rabbitmq:rabbitmq /var/log/rabbitmq /var/lib/rabbitmq/mnesia
 elapsed
 
 echo '[6] rabbitmq starts'
