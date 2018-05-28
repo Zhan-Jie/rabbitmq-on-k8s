@@ -44,15 +44,15 @@ curl -s -m 5 http://${K8S_HOST}:${K8S_PORT}/api
 echo '[4] copy configuration files to /etc/rabbitmq/'
 cp -f /tmp/rabbitmq_config/* /etc/rabbitmq/
 
-echo '[5] rabbitmq starts'
-rabbitmq-server -detached
-
-echo '[6] change directory owner'
+echo '[5] change directory owner'
 echo "/var/lib/rabbitmq/mnesia"
 ls -la /var/lib/rabbitmq/mnesia
 echo "/var/log/rabbitmq"
 ls -la /var/log/rabbitmq
 chown rabbitmq:rabbitmq /var/log/rabbitmq /var/lib/rabbitmq/mnesia
+
+echo '[6] rabbitmq starts'
+rabbitmq-server -detached
 
 echo '[7] print logs'
 wait_for_log /var/log/rabbitmq/${RABBITMQ_NODENAME}.log
