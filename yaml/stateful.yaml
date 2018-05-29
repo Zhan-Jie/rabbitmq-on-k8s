@@ -39,13 +39,14 @@ spec:
           initialDelaySeconds: 180
           timeoutSeconds: 5
           periodSeconds: 60
-          failureThreshold: 1
+          failureThreshold: 2
         readinessProbe:
           exec:
             command: ["rabbitmqctl", "status"]
           initialDelaySeconds: 15
           timeoutSeconds: 5
           periodSeconds: 60
+          failureThreshold: 1
         imagePullPolicy: IfNotPresent
         securityContext:
           capabilities: {}
@@ -73,7 +74,7 @@ spec:
         - name: RABBITMQ_USE_LONGNAME
           value: "true"
         - name: AUTOCLUSTER_LOG_LEVEL
-          value: "debug"
+          value: "warn"
         - name: RABBITMQ_NODENAME
           value: "rabbit@$(MY_POD_NAME)$(K8S_HOSTNAME_SUFFIX)"
         - name: AUTOCLUSTER_TYPE
